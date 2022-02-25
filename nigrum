@@ -33,7 +33,7 @@ do
         -w|--wait)
             WAIT="$2"
             shift;;
-        -s|--site)
+        -s|--source)
             case "$2" in
                 azlyrics)
                     DOMAIN="https://www.azlyrics.com"
@@ -47,8 +47,35 @@ do
                 songmeanings)
                     DOMAIN="https://api.songmeanings.com"
                     SITE="songmeanings";;
+                tekstowo)
+                    DOMAIN="https://www.tekstowo.pl"
+                    SITE="tekstowo";;
+                lyricsjonk)
+                    DOMAIN="https://lyricsjonk.com"
+                    SITE="lyricsjonk";;
             esac
             shift;;
+        -S|--sources-list)
+            printf 'azlyrics -w -l[a] -d[a,t]\n'
+            printf 'genius -d[a,A,t]\n'
+            printf 'mojim -l[a,A] -d[a,A,t]\n'
+            printf 'songmeanigns -d\n'
+            printf 'tekstowo -l[a] -d[a,t]\n'
+            printf 'lyricsjonk -l[a] -d[a,t]\n'
+            exit;;
+        -h|--help)
+            NAME="$(basename "$0")"
+            printf '%s [OPTIONS]...\nSearch for lyrics.\nExample: %s -s lyricsjonk -o out -a artist\n\n' "$NAME" "$NAME"
+            printf 'Options:\n  -d, --download\tdownload lyrics\n'
+            printf '  -t, --title TITILE\tset title to TITLE\n'
+            printf '  -A, --album ALBUM\tset album to ALBUM\n'
+            printf '  -a, --artist ARTIST\tset artist to ARTIST\n'
+            printf '  -s, --source NAME\tset source to NAME\n'
+            printf '  -S, --sources-list\tlist sources\n'
+            printf '  -w, --wait SECONDS\twait SECONDS between downloading files\n'
+            printf '  -l, --list\t\tlist possible lyrics\n'
+            printf '  -o, --output DIR\tset output to DIR\n'
+            exit;;
         -t|--title)
             TITLE="$(echo "$2" | sed "s/[,']//g; s/[A-Z]/\L&/g;")"
             shift;;
@@ -96,6 +123,21 @@ case "$FUNCTION" in
                 else
                     ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc1"' -printf '%i\n' | sed 's/<[^>]\+>//g; s/^ *//; s/ *$//'
                 fi;;
+            tekstowo)
+                ARTIST="$(echo "$ARTIST" | sed 's/ /-/g; s/[A-Z]/\U&/g')"
+                g=1
+                LINK="$DOMAIN/piosenki_artysty,$ARTIST,alfabetycznie,strona,$g.html"
+                while [ -n "$LINK" ]
+                do
+                    ucurl "$LINK" > "$t1"
+                    LINK="$(hgrep 'a +title="Następna .*"' "$t1" -printf "$DOMAIN%(href)a\n" | head -n1)"
+                    hgrep 'div +class="flex-group"; a +class="title"' "$t1" -printf '%i\n'
+                done;;
+            lyricsjonk)
+                ARTIST="$(echo "$ARTIST" | sed 's/ /-/g; s/[A-Z]/\U&/g')"
+                LINK="$DOMAIN/artistdetail/$ARTIST"
+                ucurl "$LINK" | hgrep 'ul +class="centerlist"; a +title' -printf '%i\n'
+                ;;
         esac
         ;;
     download)
@@ -167,7 +209,22 @@ case "$FUNCTION" in
                 end="$(ucurl "$LINK" | hgrep 'ul +class="s_listA"; a' -printf '%i|%(href)a\n' | sed "s/<[^>]\+>//g; s/ /-/g; s/[,']//g; s/[A-Z]/\L&/g" | grep "^$ARTIST|/" | cut -d '|' -f2)"
                 [ -z "$end" ] && exit
                 LINK="$DOMAIN$end"
-                if [ -n "$ALBUM" ]
+                if [ -n "$TITLE" ]
+                then
+                    TITLE="$(echo "$TITLE" | sed 's/ /-/g; s/[A-Z]/\L&/g')"
+                    ALBUM="$(echo "$ALBUM" | sed 's/ /-/g; s/[A-Z]/\L&/g')"
+                    end="$(ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc1"; a' -printf '%i|%(href)a\n' | sed 's/ |\//|\//; s/[A-Z]/\L&/g; s/ /-/g; s/-\+/-/g' | grep "^$ALBUM|/" | cut -d '|' -f 2)"
+                    [ -z "$end" ] && exit
+                    LINK="$DOMAIN$end"
+                    end="$(ucurl "$LINK" | hgrep 'table +border -class; a -class' -printf '%(href)a|%i\n' | sed 's/[A-Z]/\L&/g; s/,//g; s/ /-/g' | grep "|$TITLE$" | cut -d '|' -f1)"
+                    [ -z "$end" ] && exit
+                    LINK="$DOMAIN$end"
+                    ucurl "$LINK" > "$t1"
+                    name="$(hgrep 'dt +id="fsZx2"' "$t1" -printf "%i\n" | sed 's/^ *//; s/ /-/g; s/-\+/-/g; s/[A-Z]/\L&/g')";
+                    [ -z "$name" ] && exit
+                    echo "$name"
+                    grep "<dd id='fsZx3'" "$t1"  | sed "s/.*class='fsZx3'><br \/>//; s/\(<br \/>\)\+ $//; s/<br \/>/\n/g" | sed '/<a href="/d' > "$OUT/$name"
+                elif [ -n "$ALBUM" ]
                 then
                     ALBUM="$(echo "$ALBUM" | sed 's/ /-/g; s/[A-Z]/\L&/g')"
                     end="$(ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc1"; a' -printf '%i|%(href)a\n' | sed 's/ |\//|\//; s/[A-Z]/\L&/g; s/ /-/g; s/-\+/-/g' | grep "^$ALBUM|/" | cut -d '|' -f 2)"
@@ -178,6 +235,7 @@ case "$FUNCTION" in
                         LINK="$DOMAIN$i"
                         ucurl "$LINK" > "$t1"
                         name="$(hgrep 'dt +id="fsZx2"' "$t1" -printf "%i\n" | sed 's/^ *//; s/ /-/g; s/-\+/-/g; s/[A-Z]/\L&/g')";
+                        [ -z "$name" ] && continue
                         echo "$name"
                         grep "<dd id='fsZx3'" "$t1"  | sed "s/.*class='fsZx3'><br \/>//; s/\(<br \/>\)\+ $//; s/<br \/>/\n/g" | sed '/<a href="/d' > "$OUT/$name"
                     done
@@ -223,7 +281,7 @@ case "$FUNCTION" in
                             for n in $(ucurl "https://songmeanings.com/artist/view/songs/$id" | hgrep 'a +class="bold  orange-hover-link"' -printf '%(href)a\n' | sed 's/.*\///')
                             do
                                 ucurl "$DOMAIN/songs/$n?apikey=d3588322-490e-414e-82fc-eea6cb2d4ba9" > "$t2"
-                                title="$(jq -r '.title' "$t2" | sed "s/'//g; s/ /-/g; s/-\+/-/g; s/[A-Z]/\L&/g")" # (.lyrics)"'
+                                title="$(jq -r '.title' "$t2" | sed "s/'//g; s/ /-/g; s/-\+/-/g; s/[A-Z]/\L&/g")"
                                 printf '\t%s\n' "$title"
                                 jq -r '.lyrics' "$t2" > "$OUT/$name/$title"
                             done
@@ -231,6 +289,45 @@ case "$FUNCTION" in
                     done
                 done
                 ;;
-        esac
-        ;;
+            tekstowo)
+                ARTIST="$(echo "$ARTIST" | sed 's/ /-/g; s/[A-Z]/\U&/g')"
+                if [ -n "$TITLE" ]
+                then
+                    TITLE="$(echo "$TITLE" | sed 's/[ -]/_/g; s/,//g')"
+                    LINK="$DOMAIN/piosenka,$ARTIST,$TITLE.html"
+                    name="$(echo "$TITLE" | sed 's/_/ /g')"
+                    ucurl "$LINK" | hgrep 'div +id="songText"; div +class="inner-text"' -printf '%i\n' | sed 's/<br \/>//g' > "$OUT/$name"
+                else
+                    g=1
+                    LINK="$DOMAIN/piosenki_artysty,$ARTIST,alfabetycznie,strona,$g.html"
+                    while [ -n "$LINK" ]
+                    do
+                        ucurl "$LINK" > "$t1"
+                        LINK="$(hgrep 'a +title="Następna .*"' "$t1" -printf "$DOMAIN%(href)a\n" | head -n1)"
+                        for i in $(hgrep 'div +class="flex-group"; a +class="title"' "$t1" -printf "$DOMAIN%(href)a\n")
+                        do
+                            name="$(echo "$i" | sed 's/.*,//; s/.html//; s/_/-/g')"
+                            echo "$name"
+                            ucurl "$i" | hgrep 'div +id="songText"; div +class="inner-text"' -printf '%i\n' | sed 's/<br \/>//g' > "$OUT/$name"
+                        done
+                    done
+                fi;;
+            lyricsjonk)
+                ARTIST="$(echo "$ARTIST" | sed 's/ /-/g; s/[A-Z]/\U&/g')"
+                if [ -n "$TITLE" ]
+                then
+                    TITLE="$(echo "$TITLE" | sed 's/ /-/g; s/[A-Z]/\U&/g')"
+                    LINK="$DOMAIN/$ARTIST-$TITLE.html"
+                    ucurl "$LINK" | grep -o '<div class="hvdivcontent" .*' | sed 's/<script/\n<script/g; s/<\/script>/<\/script>\n/g;' | sed '/<script/d; s/<div class="hvdivcontent"[^>]\+>//g; s/<div .*>.*<\/div>//; s/<div [^>]\+>//; /<!--/d; /<ins/d; /<\/body>/d; /<center>/d; s/<br \/>/\n/g; /<br\/>/d; s/[ \t]\+<\/div>[\t ]\+//; s/\t//g' | sed 's/^ //' > "$OUT/$TITLE"
+                else
+                    LINK="$DOMAIN/artistdetail/$ARTIST"
+                    for i in $(ucurl "$LINK" | hgrep 'ul +class="centerlist"; a +title' -printf "$DOMAIN%(href)a\n")
+                    do
+                        ucurl "$i" > "$t1"
+                        name="$(hgrep 'li +style; span +itemprop' -printf '%i\n' "$t1" | sed 's/^ //; s/ Lyrics$//; s/[A-Z]/\L&/g; s/ /-/g; s/-\+/-/g')"
+                        echo "$name"
+                        grep -o '<div class="hvdivcontent" .*' "$t1" | sed 's/<script/\n<script/g; s/<\/script>/<\/script>\n/g;' | sed '/<script/d; s/<div class="hvdivcontent"[^>]\+>//g; s/<div .*>.*<\/div>//; s/<div [^>]\+>//; /<!--/d; /<ins/d; /<\/body>/d; /<center>/d; s/<br \/>/\n/g; /<br\/>/d; s/[ \t]\+<\/div>[\t ]\+//; s/\t//g' | sed 's/^ //' > "$OUT/$name"
+                    done
+                fi;;
+        esac;;
 esac
