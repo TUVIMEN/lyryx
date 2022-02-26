@@ -6,6 +6,7 @@ A shell script for downloading lyrics.
  - [hgrep](https://github.com/TUVIMEN/hgrep)
  - xclip
  - [recode](https://github.com/rrthomas/recode)
+ - [jq](https://github.com/stedolan/jq)
 
 ## Instalation
     install -m 755 nigrum /usr/bin
