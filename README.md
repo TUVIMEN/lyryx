@@ -8,7 +8,7 @@ A shell script for downloading lyrics.
  - [recode](https://github.com/rrthomas/recode)
  - [jq](https://github.com/stedolan/jq)
 
-## Instalation
+## Installation
     install -m 755 nigrum /usr/bin
 
 ## Supported sources
