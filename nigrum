@@ -67,7 +67,7 @@ do
             NAME="$(basename "$0")"
             printf '%s [OPTIONS]...\nSearch for lyrics.\nExample: %s -s lyricsjonk -o out -a artist\n\n' "$NAME" "$NAME"
             printf 'Options:\n  -d, --download\tdownload lyrics\n'
-            printf '  -t, --title TITILE\tset title to TITLE\n'
+            printf '  -t, --title TITLE\tset title to TITLE\n'
             printf '  -A, --album ALBUM\tset album to ALBUM\n'
             printf '  -a, --artist ARTIST\tset artist to ARTIST\n'
             printf '  -s, --source NAME\tset source to NAME\n'
