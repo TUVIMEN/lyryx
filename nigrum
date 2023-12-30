@@ -92,17 +92,17 @@ case "$FUNCTION" in
             azlyrics)
                 ARTIST="$(echo "$ARTIST" | sed 's/[ -]//g')"
                 LINK="$DOMAIN/$(echo "$ARTIST" | cut -c 1)/$ARTIST.html"
-                ucurl "$LINK" | hgrep 'a +href="/lyrics/.*" @p"%i\n"';;
+                ucurl "$LINK" | hgrep 'a +href="/lyrics/.*" | "%i\n"';;
             genius)
                 ARTIST="$(echo "$ARTIST" | sed 's/ /-/g; s/^./\U&/')"
                 if [ -n "$ALBUM" ]
                 then
                     ALBUM="$(echo "$ALBUM" | sed 's/ /-/g; s/^./\U&/')"
                     LINK="$DOMAIN/albums/$ARTIST/$ALBUM"
-                    ucurl "$LINK" | hgrep 'h3 +class="chart_row-content-title" @p"%i\n"' | sed -E 's/<.*//; s/ {2,}//; /^$/d' | recode 'HTML..UTF-8'
+                    ucurl "$LINK" | hgrep 'h3 +class="chart_row-content-title" | "%i\n"' | sed -E 's/<.*//; s/ {2,}//; /^$/d' | recode 'HTML..UTF-8'
                 else
                     LINK="$DOMAIN/artists/$ARTIST"
-                    id="$(ucurl "$LINK" | hgrep 'a +href=".*/albums?.*" +class="full_width_button" @p"'$DOMAIN'%(href)a\n"' | sed 's/.*=\([0-9]\+\)&amp.*/\1/')"
+                    id="$(ucurl "$LINK" | hgrep 'a +href=".*/albums?.*" +class="full_width_button" | "'$DOMAIN'%(href)a\n"' | sed 's/.*=\([0-9]\+\)&amp.*/\1/')"
                     [ -z "$id" ] && exit
                     ucurl "https://genius.com/api/artists/$id/albums" | jq -r '.response.albums[].name'
                 fi;;
@@ -110,18 +110,18 @@ case "$FUNCTION" in
                 ARTIST="$(echo "$ARTIST" | sed 's/ /-/g; s/[A-Z]/\U&/g')"
                 id="$(echo "$ARTIST" | od -N 2 -t d1 -v -An | awk '{ if ($1 >= 97 && $1 <= 122) {if ($2 == 32) {printf("%02d\n",581+$1);} else {printf("%02d\n",(($1-97)*26)+($2-96));} } else if ($1 >= 48 && $1 <= 57) {printf("%02d\n",677);} else {printf("%02d\n",709);} }')"
                 LINK="$DOMAIN/uszlhe1_$id.htm"
-                end="$(ucurl "$LINK" | hgrep 'ul +class="s_listA"; a @p"%i|%(href)a\n"' | sed "s/<[^>]\+>//g; s/ /-/g; s/[,']//g; s/[A-Z]/\L&/g" | grep "^$ARTIST|/" | cut -d '|' -f2)"
+                end="$(ucurl "$LINK" | hgrep 'ul +class="s_listA"; a | "%i|%(href)a\n"' | sed "s/<[^>]\+>//g; s/ /-/g; s/[,']//g; s/[A-Z]/\L&/g" | grep "^$ARTIST|/" | cut -d '|' -f2)"
                 [ -z "$end" ] && exit
                 LINK="$DOMAIN$end"
                 if [ -n "$ALBUM" ]
                 then
                     ALBUM="$(echo "$ALBUM" | sed 's/ /-/g; s/[A-Z]/\L&/g')"
-                    end="$(ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc1"; a @p"%i|%(href)a\n"' | sed 's/ |\//|\//; s/[A-Z]/\L&/g; s/ /-/g; s/-\+/-/g' | grep "^$ALBUM|/" | cut -d '|' -f 2)"
+                    end="$(ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc1"; a | "%i|%(href)a\n"' | sed 's/ |\//|\//; s/[A-Z]/\L&/g; s/ /-/g; s/-\+/-/g' | grep "^$ALBUM|/" | cut -d '|' -f 2)"
                     [ -z "$end" ] && exit
                     LINK="$DOMAIN$end"
-                    ucurl "$LINK" | hgrep 'table +border -class; a @p"%i\n"'
+                    ucurl "$LINK" | hgrep 'table +border -class; a | "%i\n"'
                 else
-                    ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc1" @p"%i\n"' | sed 's/<[^>]\+>//g; s/^ *//; s/ *$//'
+                    ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc1" | "%i\n"' | sed 's/<[^>]\+>//g; s/^ *//; s/ *$//'
                 fi;;
             tekstowo)
                 ARTIST="$(echo "$ARTIST" | sed 's/ /-/g; s/[A-Z]/\U&/g')"
@@ -130,13 +130,13 @@ case "$FUNCTION" in
                 while [ -n "$LINK" ]
                 do
                     ucurl "$LINK" > "$t1"
-                    LINK="$(hgrep 'a +title="Następna .*" @p"'$DOMAIN'%(href)a\n"' "$t1" | head -n1)"
-                    hgrep 'div +class="flex-group"; a +class="title" @p"%i\n"' "$t1"
+                    LINK="$(hgrep 'a +title="Następna .*" | "'$DOMAIN'%(href)a\n"' "$t1" | head -n1)"
+                    hgrep 'div +class="flex-group"; a +class="title" | "%i\n"' "$t1"
                 done;;
             lyricsjonk)
                 ARTIST="$(echo "$ARTIST" | sed 's/ /-/g; s/[A-Z]/\U&/g')"
                 LINK="$DOMAIN/artistdetail/$ARTIST"
-                ucurl "$LINK" | hgrep 'ul +class="centerlist"; a +title @p"%i\n"'
+                ucurl "$LINK" | hgrep 'ul +class="centerlist"; a +title | "%i\n"'
                 ;;
         esac
         ;;
@@ -147,20 +147,20 @@ case "$FUNCTION" in
                 if [ -z "$TITLE" ]
                 then
                     LINK="$DOMAIN/$(echo "$ARTIST" | cut -c 1)/$ARTIST.html"
-                    for i in $(ucurl "$LINK" | hgrep 'a +href="/lyrics/.*" @p"'$DOMAIN'/%(href)a\n"')
+                    for i in $(ucurl "$LINK" | hgrep 'a +href="/lyrics/.*" | "'$DOMAIN'/%(href)a\n"')
                     do
                         ucurl "$i" > "$t1"
-                        name="$(hgrep 'b @l[5] @p"%i\n"' "$t1" | sed 's/"//g; s/[A-Z]/\L&/g; s/ /-/g')"
-                        hgrep 'div @a[0] @p"%i\n"' "$t1" | sed 's/\r//; s/<[^>]\+>//; /^$/d;' | recode 'HTML..UTF-8' > "$OUT/$name"
+                        name="$(hgrep 'b @l[5] | "%i\n"' "$t1" | sed 's/"//g; s/[A-Z]/\L&/g; s/ /-/g')"
+                        hgrep 'div @a[0] | "%i\n"' "$t1" | sed 's/\r//; s/<[^>]\+>//; /^$/d;' | recode 'HTML..UTF-8' > "$OUT/$name"
                         echo "$name"
                         sleep "$WAIT"
                     done
                 else
                     TITLE="$(echo "$TITLE" | sed 's/[ -]//g')"
                     LINK="$DOMAIN/lyrics/$ARTIST/$TITLE.html"
-                    ucurl "$LINK" | hgrep 'a +href="/lyrics/.*" @p"'$DOMAIN'/%(href)a\n"' > "$t1"
-                    name="$(hgrep 'b @l[5] @p"%i\n"' "$t1" | sed 's/"//g; s/[A-Z]/\L&/g; s/ /-/g')"
-                    hgrep 'div @a[0] @p"%i\n"' "$t1" | sed 's/\r//; s/<[^>]\+>//; /^$/d;' | recode 'HTML..UTF-8' > "$OUT/$name"
+                    ucurl "$LINK" | hgrep 'a +href="/lyrics/.*" | "'$DOMAIN'/%(href)a\n"' > "$t1"
+                    name="$(hgrep 'b @l[5] | "%i\n"' "$t1" | sed 's/"//g; s/[A-Z]/\L&/g; s/ /-/g')"
+                    hgrep 'div @a[0] | "%i\n"' "$t1" | sed 's/\r//; s/<[^>]\+>//; /^$/d;' | recode 'HTML..UTF-8' > "$OUT/$name"
                 fi;;
             genius)
                 ARTIST="$(echo "$ARTIST" | sed 's/ /-/g; s/^./\U&/')"
@@ -169,32 +169,32 @@ case "$FUNCTION" in
                     TITLE="$(echo "$TITLE" | sed 's/ /-/g')"
                     LINK="$DOMAIN/$ARTIST-$TITLE-lyrics"
                     ucurl "$LINK" > "$t1"
-                    name=$(hgrep 'span +class="SongHeaderVariantdesktop__.*" @p"%i\n"' "$t1" | sed 's/"//g; s/[A-Z]/\L&/g; s/ /-/g')
+                    name=$(hgrep 'span +class="SongHeaderVariantdesktop__.*" | "%i\n"' "$t1" | sed 's/"//g; s/[A-Z]/\L&/g; s/ /-/g')
                     grep -Po '<div data-lyrics-container="true" class="Lyrics__Container-[^"]+">.*?</div>' "$t1" | sed 's/<br\/>/\n/g; s/<[^>]\+>//g; s/<.*//' | recode 'HTML..UTF-8' > "$OUT/$name"
                 elif [ -n "$ALBUM" ]
                 then
                     ALBUM="$(echo "$ALBUM" | sed 's/ /-/g; s/^./\U&/')"
                     LINK="$DOMAIN/albums/$ARTIST/$ALBUM"
-                    for i in $(ucurl "$LINK" | hgrep 'div +class="chart_row-content"; a +class="u-display_block" @p"%(href)a\n"')
+                    for i in $(ucurl "$LINK" | hgrep 'div +class="chart_row-content"; a +class="u-display_block" | "%(href)a\n"')
                     do
                         ucurl "$i" > "$t1"
-                        name=$(hgrep 'span +class="SongHeaderVariantdesktop__.*" @p"%i\n"' "$t1" | sed 's/"//g; s/[A-Z]/\L&/g; s/ /-/g')
+                        name=$(hgrep 'span +class="SongHeaderVariantdesktop__.*" | "%i\n"' "$t1" | sed 's/"//g; s/[A-Z]/\L&/g; s/ /-/g')
                         echo "$name"
                         grep -Po '<div data-lyrics-container="true" class="Lyrics__Container-[^"]+">.*?</div>' "$t1" | sed 's/<br\/>/\n/g; s/<[^>]\+>//g; s/<.*//' | recode 'HTML..UTF-8' > "$OUT/$name"
                     done
                 else
                     LINK="$DOMAIN/artists/$ARTIST"
-                    id="$(ucurl "$LINK" | hgrep 'a +href=".*/albums?.*" +class="full_width_button" @p"'$DOMAIN'%(href)a\n"' | sed 's/.*=\([0-9]\+\)&amp.*/\1/')"
+                    id="$(ucurl "$LINK" | hgrep 'a +href=".*/albums?.*" +class="full_width_button" | "'$DOMAIN'%(href)a\n"' | sed 's/.*=\([0-9]\+\)&amp.*/\1/')"
                     [ -z "$id" ] && exit
                     for i in $(ucurl "https://genius.com/api/artists/$id/albums" | jq -r '.response.albums[].url')
                     do
                         ALBUM="$(echo "$i" | sed 's/.*\///; s/[A-Z]/\L&/g')"
                         echo "$ALBUM"
                         mkdir "$OUT/$ALBUM"
-                        for j in $(ucurl "$i" | hgrep 'div +class="chart_row-content"; a +class="u-display_block" @p"%(href)a\n"')
+                        for j in $(ucurl "$i" | hgrep 'div +class="chart_row-content"; a +class="u-display_block" | "%(href)a\n"')
                         do
                             ucurl "$j" > "$t1"
-                            name=$(hgrep 'span +class="SongHeaderVariantdesktop__.*" @p"%i\n"' "$t1" | sed 's/"//g; s/[A-Z]/\L&/g; s/ /-/g')
+                            name=$(hgrep 'span +class="SongHeaderVariantdesktop__.*" | "%i\n"' "$t1" | sed 's/"//g; s/[A-Z]/\L&/g; s/ /-/g')
                             [ -z "$name" ] && continue;
                             printf '\t%s\n' "$name"
                             grep -Po '<div data-lyrics-container="true" class="Lyrics__Container-[^"]+">.*?</div>' "$t1" | sed 's/<br\/>/\n/g; s/<[^>]\+>//g; s/<.*//' | recode 'HTML..UTF-8' > "$OUT/$ALBUM/$name"
@@ -206,45 +206,45 @@ case "$FUNCTION" in
                 ARTIST="$(echo "$ARTIST" | sed 's/ /-/g; s/[A-Z]/\U&/g')"
                 id="$(echo "$ARTIST" | od -N 2 -t d1 -v -An | awk '{ if ($1 >= 97 && $1 <= 122) {if ($2 == 32) {printf("%02d\n",581+$1);} else {printf("%02d\n",(($1-97)*26)+($2-96));} } else if ($1 >= 48 && $1 <= 57) {printf("%02d\n",677);} else {printf("%02d\n",709);} }')"
                 LINK="$DOMAIN/uszlhe1_$id.htm"
-            end="$(ucurl "$LINK" | hgrep 'ul +class="s_listA"; a @p"%i|%(href)a\n"' | sed "s/<[^>]\+>//g; s/ /-/g; s/[,']//g; s/[A-Z]/\L&/g" | grep "^$ARTIST|/" | cut -d '|' -f2)"
+            end="$(ucurl "$LINK" | hgrep 'ul +class="s_listA"; a | "%i|%(href)a\n"' | sed "s/<[^>]\+>//g; s/ /-/g; s/[,']//g; s/[A-Z]/\L&/g" | grep "^$ARTIST|/" | cut -d '|' -f2)"
                 [ -z "$end" ] && exit
                 LINK="$DOMAIN$end"
                 if [ -n "$TITLE" ]
                 then
                     TITLE="$(echo "$TITLE" | sed 's/ /-/g; s/[A-Z]/\L&/g')"
                     ALBUM="$(echo "$ALBUM" | sed 's/ /-/g; s/[A-Z]/\L&/g')"
-                    end="$(ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc1"; a @p"%i|%(href)a\n"' | sed 's/ |\//|\//; s/[A-Z]/\L&/g; s/ /-/g; s/-\+/-/g' | grep "^$ALBUM|/" | cut -d '|' -f 2)"
+                    end="$(ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc1"; a | "%i|%(href)a\n"' | sed 's/ |\//|\//; s/[A-Z]/\L&/g; s/ /-/g; s/-\+/-/g' | grep "^$ALBUM|/" | cut -d '|' -f 2)"
                     [ -z "$end" ] && exit
                     LINK="$DOMAIN$end"
-                    end="$(ucurl "$LINK" | hgrep 'table +border -class; a -class @p"%(href)a|%i\n"' | sed 's/[A-Z]/\L&/g; s/,//g; s/ /-/g' | grep "|$TITLE$" | cut -d '|' -f1)"
+                    end="$(ucurl "$LINK" | hgrep 'table +border -class; a -class | "%(href)a|%i\n"' | sed 's/[A-Z]/\L&/g; s/,//g; s/ /-/g' | grep "|$TITLE$" | cut -d '|' -f1)"
                     [ -z "$end" ] && exit
                     LINK="$DOMAIN$end"
                     ucurl "$LINK" > "$t1"
-                    name="$(hgrep 'dt +id="fsZx2" @p"%i\n"' "$t1" | sed 's/^ *//; s/ /-/g; s/-\+/-/g; s/[A-Z]/\L&/g')";
+                    name="$(hgrep 'dt +id="fsZx2" | "%i\n"' "$t1" | sed 's/^ *//; s/ /-/g; s/-\+/-/g; s/[A-Z]/\L&/g')";
                     [ -z "$name" ] && exit
                     echo "$name"
                     grep "<dd id='fsZx3'" "$t1"  | sed "s/.*class='fsZx3'><br \/>//; s/\(<br \/>\)\+ $//; s/<br \/>/\n/g" | sed '/<a href="/d' > "$OUT/$name"
                 elif [ -n "$ALBUM" ]
                 then
                     ALBUM="$(echo "$ALBUM" | sed 's/ /-/g; s/[A-Z]/\L&/g')"
-                    end="$(ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc1"; a @p"%i|%(href)a\n"' | sed 's/ |\//|\//; s/[A-Z]/\L&/g; s/ /-/g; s/-\+/-/g' | grep "^$ALBUM|/" | cut -d '|' -f 2)"
+                    end="$(ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc1"; a | "%i|%(href)a\n"' | sed 's/ |\//|\//; s/[A-Z]/\L&/g; s/ /-/g; s/-\+/-/g' | grep "^$ALBUM|/" | cut -d '|' -f 2)"
                     [ -z "$end" ] && exit
                     LINK="$DOMAIN$end"
-                    for i in $(ucurl "$LINK" | hgrep 'table +border -class; a @p"%(href)a\n"')
+                    for i in $(ucurl "$LINK" | hgrep 'table +border -class; a | "%(href)a\n"')
                     do
                         LINK="$DOMAIN$i"
                         ucurl "$LINK" > "$t1"
-                        name="$(hgrep 'dt +id="fsZx2" @p"%i\n"' "$t1" | sed 's/^ *//; s/ /-/g; s/-\+/-/g; s/[A-Z]/\L&/g')";
+                        name="$(hgrep 'dt +id="fsZx2" | "%i\n"' "$t1" | sed 's/^ *//; s/ /-/g; s/-\+/-/g; s/[A-Z]/\L&/g')";
                         [ -z "$name" ] && continue
                         echo "$name"
                         grep "<dd id='fsZx3'" "$t1"  | sed "s/.*class='fsZx3'><br \/>//; s/\(<br \/>\)\+ $//; s/<br \/>/\n/g" | sed '/<a href="/d' > "$OUT/$name"
                     done
                 else
-                    for i in $(ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc[34]"; a -target @p"%(href)a\n"')
+                    for i in $(ucurl "$LINK" | hgrep 'dd +class="hb[23]"; span +class="hc[34]"; a -target | "%(href)a\n"')
                     do
                         LINK="$DOMAIN$i"
                         ucurl "$LINK" > "$t1"
-                        name="$(hgrep 'dt +id="fsZx2" @p"%i\n"' "$t1" | sed 's/^ *//; s/ /-/g; s/-\+/-/g; s/[A-Z]/\L&/g')";
+                        name="$(hgrep 'dt +id="fsZx2" | "%i\n"' "$t1" | sed 's/^ *//; s/ /-/g; s/-\+/-/g; s/[A-Z]/\L&/g')";
                         echo "$name"
                         grep "<dd id='fsZx3'" "$t1"  | sed "s/.*class='fsZx3'><br \/>//; s/\(<br \/>\)\+ $//; s/<br \/>/\n/g" | sed '/<a href="/d' > "$OUT/$name"
                     done
@@ -262,7 +262,7 @@ case "$FUNCTION" in
                         name="$(echo "$j" | cut -d '|' -f2)"
                         echo "$name"
                         mkdir "$OUT/$name"
-                        for n in $(ucurl "https://songmeanings.com/artist/view/songs/$id" | hgrep 'a +class="bold  orange-hover-link" @p"%i|%(href)a\n"' | sed 's/.*\///')
+                        for n in $(ucurl "https://songmeanings.com/artist/view/songs/$id" | hgrep 'a +class="bold  orange-hover-link" | "%i|%(href)a\n"' | sed 's/.*\///')
                         do
                             ucurl "$DOMAIN/songs/$n?apikey=d3588322-490e-414e-82fc-eea6cb2d4ba9" > "$t2"
                             title="$(jq -r '.title' "$t2" | sed "s/'//g; s/ /-/g; s/-\+/-/g; s/[A-Z]/\L&/g")" # (.lyrics)"'
@@ -278,7 +278,7 @@ case "$FUNCTION" in
                             name="$(echo "$j" | cut -d '|' -f2)"
                             echo "$name"
                             mkdir "$OUT/$name"
-                            for n in $(ucurl "https://songmeanings.com/artist/view/songs/$id" | hgrep 'a +class="bold  orange-hover-link" @p"%(href)a\n"' | sed 's/.*\///')
+                            for n in $(ucurl "https://songmeanings.com/artist/view/songs/$id" | hgrep 'a +class="bold  orange-hover-link" | "%(href)a\n"' | sed 's/.*\///')
                             do
                                 ucurl "$DOMAIN/songs/$n?apikey=d3588322-490e-414e-82fc-eea6cb2d4ba9" > "$t2"
                                 title="$(jq -r '.title' "$t2" | sed "s/'//g; s/ /-/g; s/-\+/-/g; s/[A-Z]/\L&/g")"
@@ -296,19 +296,19 @@ case "$FUNCTION" in
                     TITLE="$(echo "$TITLE" | sed 's/[ -]/_/g; s/,//g')"
                     LINK="$DOMAIN/piosenka,$ARTIST,$TITLE.html"
                     name="$(echo "$TITLE" | sed 's/_/ /g')"
-                    ucurl "$LINK" | hgrep 'div +id="songText"; div +class="inner-text" @p"%i\n"' | sed 's/<br \/>//g' > "$OUT/$name"
+                    ucurl "$LINK" | hgrep 'div +id="songText"; div +class="inner-text" | "%i\n"' | sed 's/<br \/>//g' > "$OUT/$name"
                 else
                     g=1
                     LINK="$DOMAIN/piosenki_artysty,$ARTIST,alfabetycznie,strona,$g.html"
                     while [ -n "$LINK" ]
                     do
                         ucurl "$LINK" > "$t1"
-                        LINK="$(hgrep 'a +title="Następna .*" @p"'$DOMAIN'%(href)a\n"' "$t1"  | head -n1)"
-                        for i in $(hgrep 'div +class="flex-group"; a +class="title" @p"'$DOMAIN'%(href)a\n"' "$t1")
+                        LINK="$(hgrep 'a +title="Następna .*" | "'$DOMAIN'%(href)a\n"' "$t1"  | head -n1)"
+                        for i in $(hgrep 'div +class="flex-group"; a +class="title" | "'$DOMAIN'%(href)a\n"' "$t1")
                         do
                             name="$(echo "$i" | sed 's/.*,//; s/.html//; s/_/-/g')"
                             echo "$name"
-                            ucurl "$i" | hgrep 'div +id="songText"; div +class="inner-text" @p"%i\n"' | sed 's/<br \/>//g' > "$OUT/$name"
+                            ucurl "$i" | hgrep 'div +id="songText"; div +class="inner-text" | "%i\n"' | sed 's/<br \/>//g' > "$OUT/$name"
                         done
                     done
                 fi;;
@@ -321,10 +321,10 @@ case "$FUNCTION" in
                     ucurl "$LINK" | grep -o '<div class="hvdivcontent" .*' | sed 's/<script/\n<script/g; s/<\/script>/<\/script>\n/g;' | sed '/<script/d; s/<div class="hvdivcontent"[^>]\+>//g; s/<div .*>.*<\/div>//; s/<div [^>]\+>//; /<!--/d; /<ins/d; /<\/body>/d; /<center>/d; s/<br \/>/\n/g; /<br\/>/d; s/[ \t]\+<\/div>[\t ]\+//; s/\t//g' | sed 's/^ //' > "$OUT/$TITLE"
                 else
                     LINK="$DOMAIN/artistdetail/$ARTIST"
-                    for i in $(ucurl "$LINK" | hgrep 'ul +class="centerlist"; a +title @p"'$DOMAIN'%(href)a\n"')
+                    for i in $(ucurl "$LINK" | hgrep 'ul +class="centerlist"; a +title | "'$DOMAIN'%(href)a\n"')
                     do
                         ucurl "$i" > "$t1"
-                        name="$(hgrep 'li +style; span +itemprop @p"%i\n"' "$t1" | sed 's/^ //; s/ Lyrics$//; s/[A-Z]/\L&/g; s/ /-/g; s/-\+/-/g')"
+                        name="$(hgrep 'li +style; span +itemprop | "%i\n"' "$t1" | sed 's/^ //; s/ Lyrics$//; s/[A-Z]/\L&/g; s/ /-/g; s/-\+/-/g')"
                         echo "$name"
                         grep -o '<div class="hvdivcontent" .*' "$t1" | sed 's/<script/\n<script/g; s/<\/script>/<\/script>\n/g;' | sed '/<script/d; s/<div class="hvdivcontent"[^>]\+>//g; s/<div .*>.*<\/div>//; s/<div [^>]\+>//; /<!--/d; /<ins/d; /<\/body>/d; /<center>/d; s/<br \/>/\n/g; /<br\/>/d; s/[ \t]\+<\/div>[\t ]\+//; s/\t//g' | sed 's/^ //' > "$OUT/$name"
                     done
