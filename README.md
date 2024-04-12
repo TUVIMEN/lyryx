@@ -1,44 +1,54 @@
-# nigrum
-A shell script for downloading lyrics.
+# lyryx
+
+A python script for downloading lyrics.
 
 ## Requirements
 
- - [hgrep](https://github.com/TUVIMEN/hgrep)
- - xclip
- - [recode](https://github.com/rrthomas/recode)
- - [jq](https://github.com/stedolan/jq)
+    requests
+    lxml
 
 ## Installation
-    install -m 755 nigrum /usr/bin
+    pip install -r requirements.txt
+    install -m 755 lyryx /usr/bin
 
 ## Supported sources
 
- - [azlyrics](https://www.azlyrics.com) -w -l[a] -d[a,t]
- - [genius](https://genius.com) -l[a,A] -d[a,A,t]
- - [mojim](https://mojim.com) -l[a,A] -d[a,A,t]
- - [songmeanigns](https://api.songmeanings.com) -d
- - [tekstowo](https://www.tekstowo.pl) -l[a] -d[a,t]
- - [lyricsjonk](https://lyricsjonk.com) -l[a] -d[a,t]
+ - [azlyrics](https://www.azlyrics.com) --artist,--title
+ - [genius](https://genius.com) --artist,--album,--title
+ - [mojim](https://mojim.com) --artist,--album,--title
+ - [tekstowo](https://www.tekstowo.pl) --artist,--title
+ - [lyricsjonk](https://lyricsjonk.com) --artist,--title
 
 ## Usage
 
-List songs/albums of artist
+Script download lyrics to a song based on --artist,--title,--album. The above list specifies supported arguments for different sources.
 
-    nigrum -s genius -l -a artist
+Every source requires --artist to be specified, and the ones with --album have to be either called with --album or --title.
 
-List songs of album
+Lyrics will be downloaded to files named by their name `in-such-format`.
 
-    nigrum -s genius -l -a artist -A album
+`azlyrics` is very agresive against fast downloading, you should limit the speed of your requests with `--wait` option if you are using it as a source.
 
-Download lyrics of artist
+Download lyrics by artist to current directory, by default from `genius`
 
-    nigrum -s mojim -d -a artist -o destination
+    lyryx -a burzum
 
-Download lyrics of album
+Download lyrics by artist from `azlyrics` setting request speed to 2.5 seconds
 
-    nigrum -s mojim -d -a artist -A album -o destination
+    lyryx -s azlyrics -w 2.5 -a burzum
 
-Download lyrics of song
+Download lyrics by album to directory DIR
 
-    nigrum -s mojim -d -a artist -A album -t title -o destination
-    nigrum -s azlyrics -d -a artist -t title -o destination
+    lyryx -s genius -d DIR -a 'At the gates' -A 'terminal spirit disease'
+
+Download lyrics by title
+
+    lyryx -s tekstowo -a cirith-ungol -t 'Fallen IDOLS'
+
+Print sources table
+
+    lyryx -S
+
+Get some help
+
+    lyryx -h
