@@ -15,10 +15,10 @@ session.headers.update({'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:101.0) 
 
 request_wait = None
 
-azlyrics_domain = "https://www.azlyrics.com"
+azlyrics_domain = 'https://www.azlyrics.com'
 tekstowo_domain = 'https://www.tekstowo.pl'
 lyricsjonk_domain = 'https://lyricsjonk.com'
-mojim_domain = "https://mojim.com"
+mojim_domain = 'https://mojim.com'
 genius_domain = 'https://genius.com'
 
 def get_req(url):
@@ -61,7 +61,7 @@ def lyryx_name_from_url(url,delim):
     return url.translate(str.maketrans('_','-'))
 
 def lyryx_field_process(field):
-    return field.strip().lower().translate(str.maketrans('','',',.()[]{}"\'+/\\&@!?#%^*'))
+    return field.strip().lower().translate(str.maketrans('','',',.()[]{}"\'+/\\&@!?#%^*:'))
 
 def lyryx_field_floored(field):
     return re.sub(r'_+','_',lyryx_field_process(field).translate(str.maketrans(' -','__')))
@@ -433,10 +433,10 @@ def get_argparser():
 
     parser.add_argument(
         "lyrics",
-        metavar="LYRICS",
+        metavar="LYRICS|URL",
         type=str,
         nargs="*",
-        help='Specifies the input lyrics in "artist|album", "artist||title" or "artist" formats'
+        help='Specifies the input lyrics in "artist|album", "artist||title" or "artist" formats or as url to the source'
     )
 
     parser.add_argument(
@@ -469,18 +469,44 @@ def get_argparser():
 
     return parser
 
+def get_lyrics(source,lyrics):
+    fields = ['','','']
+    for j, g in enumerate(lyrics.split('|')[0:3]):
+        fields[j] = g
+    if fields[0] == '':
+        print('"{}" - artist field has to be specified',file=sys.stderr)
+        return
+    if fields[1] != '' and fields[2] != '':
+        print('"{}" - album and title cannot be specified together'.format(i),file=sys.stderr)
+        return
+    source(*fields)
+
+def get_url(url):
+    formats = {
+        (r'https?://www\.tekstowo\.pl/piosenki_artysty,[a-zA-Z0-9_]+\.html',get_tekstowo_artist),
+        (r'https?://www\.tekstowo\.pl/piosenka,[a-zA-Z0-9_]+,[a-zA-Z0-9_]+\.html',get_tekstowo_title),
+        (r'https?://lyricsjonk\.com/artistdetail/[a-zA-Z0-9-._,]',get_lyricsjonk_artist),
+        (r'https?://lyricsjonk\.com/[a-zA-Z0-9-._,]\.html',get_lyricsjonk_artist),
+        (r'https?://genius\.com/[a-zA-Z0-9-,._]-lyrics',get_genius_title),
+        (r'https?://genius\.com/albums/[a-zA-Z0-9-,._]/[a-zA-Z0-9-,._]',get_genius_album),
+        (r'https?://genius\.com/artists/[a-zA-Z0-9-,._]',get_genius_artist),
+        (r'https?://mojim\.com/ush[0-9]+\.htm',get_mojim_artist),
+        (r'https?://mojim\.com/us[0-9]+x[0-9]+\.htm',get_mojim_album),
+        (r'https?://mojim\.com/usy[0-9]+x[0-9]+x[0-9]+\.htm',get_mojim_title)
+    }
+
+    for i in formats:
+        if re.fullmatch(i[0],url):
+            i[1](url)
+            return
+    print('{} - unknown format'.format(url),file=sys.stderr)
+
 def get_lyryx(source,lyrics):
     for i in lyrics:
-        fields = ['','','']
-        for j, g in enumerate(i.split('|')[0:3]):
-            fields[j] = g
-        if fields[0] == '':
-            print('"{}" - artist field has to be specified',file=sys.stderr)
-            return
-        if fields[1] != '' and fields[2] != '':
-            print('"{}" - album and title cannot be specified together'.format(i),file=sys.stderr)
-            continue
-        source(*fields)
+        if re.match(r'^https?://([a-zA-Z0-9-]+\.)+[a-zA-Z]+/',i):
+            get_url(i)
+        else:
+            get_lyrics(source,i)
 
 def main():
     args = get_argparser().parse_args(sys.argv[1:] if sys.argv[1:] else ['-h'])
@@ -506,12 +532,6 @@ lyricsjonk  artist                  artist||title""")
     request_wait = args.wait if args.wait else None
 
     get_lyryx(source,args.lyrics)
-#    artist = args.artist if args.artist else ''
-#    album = args.album if args.album else ''
-#    title = args.title if args.title else ''
-#
-#    source(artist,album,title)
-
 
 if __name__ == "__main__":
     main()

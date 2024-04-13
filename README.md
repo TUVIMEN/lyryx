@@ -13,15 +13,17 @@ A python script for downloading lyrics.
 
 ## Supported sources
 
- - [azlyrics](https://www.azlyrics.com) --artist,--title
- - [genius](https://genius.com) --artist,--album,--title
- - [mojim](https://mojim.com) --artist,--album,--title
- - [tekstowo](https://www.tekstowo.pl) --artist,--title
- - [lyricsjonk](https://lyricsjonk.com) --artist,--title
+ - [azlyrics](https://www.azlyrics.com) artist                  artist||title
+ - [genius](https://genius.com)         artist  artist|album    artist||title
+ - [mojim](https://mojim.com)           artist  artist|album    artist||title
+ - [tekstowo](https://www.tekstowo.pl)  artist                  artist||title
+ - [lyricsjonk](https://lyricsjonk.com) artist                  artist||title
 
 ## Usage
 
 Script download lyrics to a song based on arguments provided. Arguments have to be in `artist`, `artist|album` or `artist||title` format. Fields in the arguments are case insensitive and special characters are deleted from them, words can be separated by ' ', '-' or '_'.
+
+Arguments can also be links to lyrics.
 
 Currently no source supports `artist|album|title`.
 
@@ -44,6 +46,10 @@ Download lyrics by artist|album to directory DIR
 Download lyrics by artist||title
 
     lyryx -s tekstowo 'cirith-ungol||Fallen IDOLS' 'death||suicide-machine'
+
+Download lyrics by url
+
+    lyryx 'https://mojim.com/ush163952.htm'
 
 Print sources table
 
