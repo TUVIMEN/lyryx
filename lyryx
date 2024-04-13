@@ -105,8 +105,8 @@ def get_azlyrics_artist(url):
 
 
 def get_azlyrics(artist,album,title):
-    if artist == '':
-        print("azlyrics: artist not specified",file=sys.stderr)
+    if album != '':
+        print('azlyrics: album field is not supported',file=sys.stderr)
         return
     artist = lyryx_field_merged(artist)
     if title == '':
@@ -150,8 +150,8 @@ def get_tekstowo_artist(url):
         nextpage = nextpage[0]
 
 def get_tekstowo(artist,album,title):
-    if artist == '':
-        print("tekstowo: artist not specified",file=sys.stderr)
+    if album != '':
+        print('tekstowo: album field is not supported',file=sys.stderr)
         return
     artist = lyryx_field_floored(artist)
     if title == '':
@@ -191,10 +191,9 @@ def get_lyricsjonk_artist(url):
 
 
 def get_lyricsjonk(artist,album,title):
-    if artist == '':
-        print("lyricsjonk: artist not specified",file=sys.stderr)
+    if album != '':
+        print('lyricsjonk: album field is not supported',file=sys.stderr)
         return
-
     artist = lyryx_field_dashed(artist);
 
     if title == '':
@@ -259,10 +258,6 @@ def get_genius_artist(url):
         get_genius_album(i['url'])
 
 def get_genius(artist,album,title):
-    if artist == '':
-        print("genius: artist not specified",file=sys.stderr)
-        return
-
     artist = lyryx_field_dashed(artist);
 
     if album != '':
@@ -326,10 +321,6 @@ def get_mojim_title(url):
         file.write(out)
 
 def mojim_artist_search(artist):
-    if artist == '':
-        print("mojim: artist not specified",file=sys.stderr)
-        return None
-
     artist = lyryx_field_dashed(artist)
 
     artistid = mojim_artistid_process(artist)
@@ -441,6 +432,14 @@ def get_argparser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
+        "lyrics",
+        metavar="LYRICS",
+        type=str,
+        nargs="*",
+        help='Specifies the input lyrics in "artist|album", "artist||title" or "artist" formats'
+    )
+
+    parser.add_argument(
         '-d',
         '--directory',
         metavar='DIR',
@@ -467,29 +466,21 @@ def get_argparser():
         type=valid_source,
         help='Specifies lyrics source'
     )
-    parser.add_argument(
-        '-a',
-        '--artist',
-        metavar='ARTIST',
-        type=str,
-        help='Specifies artist of the song'
-    )
-    parser.add_argument(
-        '-A',
-        '--album',
-        metavar='ALBUM',
-        type=str,
-        help='Specifies album of the song'
-    )
-    parser.add_argument(
-        '-t',
-        '--title',
-        metavar='TITLE',
-        type=str,
-        help='Specifies title of the song'
-    )
 
     return parser
+
+def get_lyryx(source,lyrics):
+    for i in lyrics:
+        fields = ['','','']
+        for j, g in enumerate(i.split('|')[0:3]):
+            fields[j] = g
+        if fields[0] == '':
+            print('"{}" - artist field has to be specified',file=sys.stderr)
+            return
+        if fields[1] != '' and fields[2] != '':
+            print('"{}" - album and title cannot be specified together'.format(i),file=sys.stderr)
+            continue
+        source(*fields)
 
 def main():
     args = get_argparser().parse_args(sys.argv[1:] if sys.argv[1:] else ['-h'])
@@ -498,11 +489,14 @@ def main():
 
     if args.sources_list:
         print("""\
-azlyrics    --artist,--title
-genius      --artist,--album,--title
-mojim       --artist,--album,--title
-tekstowo    --artist,--title
-lyricsjonk  --artist,--title""")
+azlyrics    artist                  artist||title
+genius      artist  artist|album    artist||title
+mojim       artist  artist|album    artist||title
+tekstowo    artist                  artist||title
+lyricsjonk  artist                  artist||title""")
+        return
+
+    if len(args.lyrics) == 0:
         return
 
     if args.source is not None:
@@ -510,11 +504,14 @@ lyricsjonk  --artist,--title""")
 
     global request_wait
     request_wait = args.wait if args.wait else None
-    artist = args.artist if args.artist else ''
-    album = args.album if args.album else ''
-    title = args.title if args.title else ''
 
-    source(artist,album,title)
+    get_lyryx(source,args.lyrics)
+#    artist = args.artist if args.artist else ''
+#    album = args.album if args.album else ''
+#    title = args.title if args.title else ''
+#
+#    source(artist,album,title)
+
 
 if __name__ == "__main__":
     main()

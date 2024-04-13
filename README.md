@@ -21,29 +21,29 @@ A python script for downloading lyrics.
 
 ## Usage
 
-Script download lyrics to a song based on --artist,--title,--album. The above list specifies supported arguments for different sources.
+Script download lyrics to a song based on arguments provided. Arguments have to be in `artist`, `artist|album` or `artist||title` format. Fields in the arguments are case insensitive and special characters are deleted from them, words can be separated by ' ', '-' or '_'.
 
-Every source requires --artist to be specified, and the ones with --album have to be either called with --album or --title.
+Currently no source supports `artist|album|title`.
 
 Lyrics will be downloaded to files named by their name `in-such-format`.
 
-`azlyrics` is very agresive against fast downloading, you should limit the speed of your requests with `--wait` option if you are using it as a source.
+`azlyrics` is very aggressive against fast downloading, you should limit the speed of your requests with `--wait` option if you are using it as a source.
 
 Download lyrics by artist to current directory, by default from `genius`
 
-    lyryx -a burzum
+    lyryx burzum
 
 Download lyrics by artist from `azlyrics` setting request speed to 2.5 seconds
 
-    lyryx -s azlyrics -w 2.5 -a burzum
+    lyryx -s azlyrics -w 2.5 burzum
 
-Download lyrics by album to directory DIR
+Download lyrics by artist|album to directory DIR
 
-    lyryx -s genius -d DIR -a 'At the gates' -A 'terminal spirit disease'
+    lyryx -s genius -d DIR 'At the gates|terminal spirit disease'
 
-Download lyrics by title
+Download lyrics by artist||title
 
-    lyryx -s tekstowo -a cirith-ungol -t 'Fallen IDOLS'
+    lyryx -s tekstowo 'cirith-ungol||Fallen IDOLS' 'death||suicide-machine'
 
 Print sources table
 
