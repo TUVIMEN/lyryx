@@ -49,18 +49,27 @@ def get_json(url):
 
     return resp.json()
 
+def lyryx_name_from_url(url):
+    url = re.sub(r'.*,','',url)
+    url = re.sub(r'\.html$','',url)
+    return url.translate(str.maketrans('_','-'))
+
+def lyryx_field_process(field):
+    return field.strip().lower().translate(str.maketrans('','',',.()[]{}"\'+/\\&@!?#%^*'))
+
+def lyryx_field_floored(field):
+    return re.sub(r'_+','_',lyryx_field_process(field).translate(str.maketrans(' -','__')))
+
+def lyryx_field_dashed(field):
+    return re.sub(r'-+','-',lyryx_field_process(field).translate(str.maketrans(' _','--')))
+
+def lyryx_field_merged(field):
+    return lyryx_field_process(field).translate(str.maketrans('','',' -_'))
 
 def azlyrics_robots(r):
     if len(r.xpath('//b[contains(text(),"Our systems have detected unusual activity from your IP address (computer network)")]/text()')):
         return True
     return False
-
-def azlyrics_artist_process(text):
-    return text.strip().translate(str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz',' -_,'))
-
-def azlyrics_name_process(name):
-    name = re.sub(r' +',' ',name.strip())
-    return name.translate(str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ ','abcdefghijklmnopqrstuvwxyz-','",'))
 
 def get_azlyrics_lyrics(url):
     page = get_html(url,azlyrics_robots)
@@ -69,7 +78,7 @@ def get_azlyrics_lyrics(url):
     name = page.xpath('//div[contains(@class,"text-center")]/b/text()')
     if len(name) == 0:
         return
-    name = azlyrics_name_process(name[0])
+    name = lyryx_field_dashed(name[0])
     if os.path.exists(name):
         print("{} file already exists".format(name),file=sys.stderr)
         return
@@ -85,7 +94,7 @@ def get_azlyrics(artist,album,title):
     if artist == '':
         print("azlyrics: artist not specified",file=sys.stderr)
         return
-    artist = azlyrics_artist_process(artist)
+    artist = lyryx_field_merged(artist)
     if title == '':
         link = "{}/{}/{}.html".format(azlyrics_domain,artist[0],artist)
         print(link)
@@ -95,27 +104,13 @@ def get_azlyrics(artist,album,title):
         for i in page.xpath('//a[contains(@href,"/lyrics/")]/@href'):
             get_azlyrics_lyrics('{}{}'.format(azlyrics_domain,i))
     else:
-        title = azlyrics_artist_process(title)
+        title = lyryx_field_merged(title)
         link = "{}/lyrics/{}/{}.html".format(azlyrics_domain,artist,title)
         get_azlyrics_lyrics(link)
 
-def tekstowo_artist_process(text):
-    text = text.strip().translate(str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ -','abcdefghijklmnopqrstuvwxyz__'))
-    return re.sub(r'-+','-',text)
-
-def tekstowo_title_process(text):
-    text = text.strip().translate(str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ -','abcdefghijklmnopqrstuvwxyz__',','))
-    return re.sub(r'_+','_',text)
-
-def tekstowo_name_process(name):
-    name = re.sub(r'.*,','',name.strip())
-    name = re.sub(r'\.html$','',name)
-    name = name.translate(str.maketrans('_','-',''))
-    return name
-
 def get_tekstowo_lyrics(url):
     print(url)
-    name = tekstowo_name_process(url)
+    name = lyryx_name_from_url(url)
     if os.path.exists(name):
         print("{} file already exists".format(name),file=sys.stderr)
         return
@@ -135,7 +130,7 @@ def get_tekstowo(artist,album,title):
     if artist == '':
         print("tekstowo: artist not specified",file=sys.stderr)
         return
-    artist = tekstowo_artist_process(artist)
+    artist = lyryx_field_floored(artist)
     if title == '':
         pagenumber = 1
         nextpage = '/piosenki_artysty,{},alfabetycznie,strona,{}.html'.format(artist,pagenumber)
@@ -152,21 +147,12 @@ def get_tekstowo(artist,album,title):
                 break
             nextpage = nextpage[0]
     else:
-        title = tekstowo_title_process(title)
+        title = lyryx_field_floored(title)
         get_tekstowo_lyrics("{}/piosenka,{},{}.html".format(tekstowo_domain,artist,title))
-
-def lyricsjonk_artist_process(text):
-    text = text.strip().translate(str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ ','abcdefghijklmnopqrstuvwxyz-'))
-    return re.sub(r'-+','-',text)
-
-def lyricsjonk_name_process(name):
-    name = re.sub(r'.*/','',name.strip())
-    name = re.sub(r'\.html$','',name)
-    return name
 
 def get_lyricsjonk_lyrics(url):
     print(url)
-    name = lyricsjonk_name_process(url)
+    name = lyryx_name_from_url(url)
     if os.path.exists(name):
         print("{} file already exists".format(name),file=sys.stderr)
         return
@@ -190,7 +176,7 @@ def get_lyricsjonk(artist,album,title):
         print("lyricsjonk: artist not specified",file=sys.stderr)
         return
 
-    artist = lyricsjonk_artist_process(artist);
+    artist = lyryx_field_dashed(artist);
 
     if title == '':
         link = "{}/artistdetail/{}".format(lyricsjonk_domain,artist)
@@ -200,15 +186,8 @@ def get_lyricsjonk(artist,album,title):
         for i in page.xpath('//ul[@class="centerlist"]//a[@title]/@href'):
             get_lyricsjonk_lyrics("{}{}".format(lyricsjonk_domain,i))
     else:
-        title = lyricsjonk_artist_process(title);
+        title = lyryx_field_dashed(title);
         get_lyricsjonk_lyrics("{}/{}-{}.html".format(lyricsjonk_domain,artist,title))
-
-def genius_artist_process(artist):
-    artist = artist.strip().translate(str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ ','abcdefghijklmnopqrstuvwxyz-',','))
-    return re.sub(r'-+','-',artist)
-
-def genius_name_process(name):
-    return name.strip().translate(str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ ','abcdefghijklmnopqrstuvwxyz-','(),'))
 
 def get_genius_lyrics(url):
     print(url)
@@ -218,7 +197,7 @@ def get_genius_lyrics(url):
     name = page.xpath('//span[contains(@class,"SongHeaderdesktop__")]/text()')
     if len(name) == 0:
         return
-    name = genius_name_process(name[0])
+    name = lyryx_field_dashed(name[0])
     if os.path.exists(name):
         print("{} file already exists".format(name),file=sys.stderr)
         return
@@ -252,14 +231,14 @@ def get_genius(artist,album,title):
         print("genius: artist not specified",file=sys.stderr)
         return
 
-    artist = genius_artist_process(artist);
+    artist = lyryx_field_dashed(artist);
 
     if album != '':
-        album = genius_artist_process(album)
+        album = lyryx_field_dashed(album)
         link = "{}/albums/{}/{}".format(genius_domain,artist,album)
         get_genius_album(link)
     elif title != '':
-        title = genius_artist_process(title)
+        title = lyryx_field_dashed(title)
         link = "{}/{}-{}-lyrics".format(genius_domain,artist,title)
         get_genius_lyrics(link)
     else:
@@ -279,10 +258,6 @@ def get_genius(artist,album,title):
             return
         for i in albums['response']['albums']:
             get_genius_album(i['url'])
-
-def mojim_artist_process(artist):
-    artist = artist.strip().translate(str.maketrans('ABCDEFGHIJKLMNOPQRSTUVWXYZ ','abcdefghijklmnopqrstuvwxyz-',',\''))
-    return re.sub(r'-+','-',artist)
 
 def mojim_artistid_process(artist):
     f = ord(artist[0])
@@ -309,7 +284,7 @@ def get_mojim_lyrics(url):
     name = page.xpath('//dt[@id="fsZx2"]/text()')
     if len(name) == 0:
         return
-    name = mojim_artist_process(name[0])
+    name = lyryx_field_dashed(name[0])
     if os.path.exists(name):
         print("{} file already exists".format(name),file=sys.stderr)
         return
@@ -330,7 +305,7 @@ def get_mojim(artist,album,title):
         print("genius: artist not specified",file=sys.stderr)
         return
 
-    artist = mojim_artist_process(artist)
+    artist = lyryx_field_dashed(artist)
 
     artistid = mojim_artistid_process(artist)
     link = "{}/uszlhe1_{}.htm".format(mojim_domain,artistid)
@@ -361,7 +336,7 @@ def get_mojim(artist,album,title):
         return
 
     if album != '':
-        album = mojim_artist_process(album)
+        album = lyryx_field_dashed(album)
         s_album = album.translate(str.maketrans('-',' ')).title()
         album_link = []
 
@@ -388,7 +363,7 @@ def get_mojim(artist,album,title):
     else:
         s_title = ''
         if title != '':
-            title = mojim_artist_process(title)
+            title = lyryx_field_dashed(title)
             s_title = title.translate(str.maketrans('-',' ')).title()
 
         for i in page.xpath('//dd[@class="hb2" or @class="hb3"]//span[@class="hc3" or @class="hc4"]//a[not(@target)]'):
