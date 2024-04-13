@@ -15,6 +15,12 @@ session.headers.update({'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:101.0) 
 
 request_wait = None
 
+azlyrics_domain = "https://www.azlyrics.com"
+tekstowo_domain = 'https://www.tekstowo.pl'
+lyricsjonk_domain = 'https://lyricsjonk.com'
+mojim_domain = "https://mojim.com"
+genius_domain = 'https://genius.com'
+
 def get_req(url):
     resp = session.get(url)
 
@@ -49,8 +55,8 @@ def get_json(url):
 
     return resp.json()
 
-def lyryx_name_from_url(url):
-    url = re.sub(r'.*,','',url)
+def lyryx_name_from_url(url,delim):
+    url = re.sub(r'.*'+delim,'',url)
     url = re.sub(r'\.html$','',url)
     return url.translate(str.maketrans('_','-'))
 
@@ -71,7 +77,7 @@ def azlyrics_robots(r):
         return True
     return False
 
-def get_azlyrics_lyrics(url):
+def get_azlyrics_title(url):
     page = get_html(url,azlyrics_robots)
     if page == None:
         return
@@ -89,28 +95,30 @@ def get_azlyrics_lyrics(url):
     with open(name,"w") as file:
         file.write(''.join(lyrics))
 
+def get_azlyrics_artist(url):
+    print(url)
+    page = get_html(url,azlyrics_robots)
+    if page == None:
+        return
+    for i in page.xpath('//a[contains(@href,"/lyrics/")]/@href'):
+        get_azlyrics_title('{}{}'.format(azlyrics_domain,i))
+
+
 def get_azlyrics(artist,album,title):
-    azlyrics_domain="https://www.azlyrics.com"
     if artist == '':
         print("azlyrics: artist not specified",file=sys.stderr)
         return
     artist = lyryx_field_merged(artist)
     if title == '':
         link = "{}/{}/{}.html".format(azlyrics_domain,artist[0],artist)
-        print(link)
-        page = get_html(link,azlyrics_robots)
-        if page == None:
-            return
-        for i in page.xpath('//a[contains(@href,"/lyrics/")]/@href'):
-            get_azlyrics_lyrics('{}{}'.format(azlyrics_domain,i))
+        get_azlyrics_artist(link)
     else:
         title = lyryx_field_merged(title)
-        link = "{}/lyrics/{}/{}.html".format(azlyrics_domain,artist,title)
-        get_azlyrics_lyrics(link)
+        get_azlyrics_title("{}/lyrics/{}/{}.html".format(azlyrics_domain,artist,title))
 
-def get_tekstowo_lyrics(url):
+def get_tekstowo_title(url):
     print(url)
-    name = lyryx_name_from_url(url)
+    name = lyryx_name_from_url(url,r',')
     if os.path.exists(name):
         print("{} file already exists".format(name),file=sys.stderr)
         return
@@ -125,8 +133,23 @@ def get_tekstowo_lyrics(url):
     with open(name,"w") as file:
         file.write(''.join(lyrics))
 
+def get_tekstowo_artist(url):
+    print(url)
+    while True:
+        page = get_html(url,None)
+        if page == None:
+            return
+
+        for i in page.xpath('//div[@class="flex-group"]//a[@class="title"]/@href'):
+            get_tekstowo_title("{}{}".format(tekstowo_domain,i))
+
+        url = page.xpath('//a[contains(@title,"Następna ")]/@href')
+        if len(url) == 0:
+            break
+        url = "{}{}".format(tekstowo_domain,url)
+        nextpage = nextpage[0]
+
 def get_tekstowo(artist,album,title):
-    tekstowo_domain='https://www.tekstowo.pl'
     if artist == '':
         print("tekstowo: artist not specified",file=sys.stderr)
         return
@@ -134,25 +157,14 @@ def get_tekstowo(artist,album,title):
     if title == '':
         pagenumber = 1
         nextpage = '/piosenki_artysty,{},alfabetycznie,strona,{}.html'.format(artist,pagenumber)
-        while len(nextpage):
-            pagel = "{}{}".format(tekstowo_domain,nextpage)
-            print(pagel)
-            page = get_html(pagel,None)
-            if page == None:
-                return
-            for i in page.xpath('//div[@class="flex-group"]//a[@class="title"]/@href'):
-                get_tekstowo_lyrics("{}{}".format(tekstowo_domain,i))
-            nextpage = page.xpath('//a[contains(@title,"Następna ")]/@href')
-            if len(nextpage) == 0:
-                break
-            nextpage = nextpage[0]
+        get_tekstowo_artist(tekstowo_domain + nextpage)
     else:
         title = lyryx_field_floored(title)
-        get_tekstowo_lyrics("{}/piosenka,{},{}.html".format(tekstowo_domain,artist,title))
+        get_tekstowo_title("{}/piosenka,{},{}.html".format(tekstowo_domain,artist,title))
 
-def get_lyricsjonk_lyrics(url):
+def get_lyricsjonk_title(url):
     print(url)
-    name = lyryx_name_from_url(url)
+    name = lyryx_name_from_url(url,r'/')
     if os.path.exists(name):
         print("{} file already exists".format(name),file=sys.stderr)
         return
@@ -170,8 +182,15 @@ def get_lyricsjonk_lyrics(url):
     with open(name,"w") as file:
         file.write(out)
 
+def get_lyricsjonk_artist(url):
+    page = get_html(url,None);
+    if page == None:
+        return
+    for i in page.xpath('//ul[@class="centerlist"]//a[@title]/@href'):
+        get_lyricsjonk_title("{}{}".format(lyricsjonk_domain,i))
+
+
 def get_lyricsjonk(artist,album,title):
-    lyricsjonk_domain='https://lyricsjonk.com'
     if artist == '':
         print("lyricsjonk: artist not specified",file=sys.stderr)
         return
@@ -179,17 +198,12 @@ def get_lyricsjonk(artist,album,title):
     artist = lyryx_field_dashed(artist);
 
     if title == '':
-        link = "{}/artistdetail/{}".format(lyricsjonk_domain,artist)
-        page = get_html(link,None);
-        if page == None:
-            return
-        for i in page.xpath('//ul[@class="centerlist"]//a[@title]/@href'):
-            get_lyricsjonk_lyrics("{}{}".format(lyricsjonk_domain,i))
+        get_lyricsjonk_artist("{}/artistdetail/{}".format(lyricsjonk_domain,artist))
     else:
         title = lyryx_field_dashed(title);
-        get_lyricsjonk_lyrics("{}/{}-{}.html".format(lyricsjonk_domain,artist,title))
+        get_lyricsjonk_title("{}/{}-{}.html".format(lyricsjonk_domain,artist,title))
 
-def get_genius_lyrics(url):
+def get_genius_title(url):
     print(url)
     page = get_html(url,None)
     if page == None:
@@ -222,11 +236,29 @@ def get_genius_album(url):
     if page == None:
         return
     for i in page.xpath('//div[@class="chart_row-content"]//a[@class="u-display_block"]/@href'):
-        get_genius_lyrics(i)
+        get_genius_title(i)
+
+def get_genius_artist(url):
+    page = get_html(url,None)
+    if page == None:
+        return
+
+    artist_id = page.xpath('//a[contains(@href,"/albums?") and @class="full_width_button"]/@href')
+    if len(artist_id) == 0:
+        return
+    artist_id = genius_id_process(artist_id[0])
+    if len(artist_id) == 0:
+        return
+
+    albums_link = "{}/api/artists/{}/albums".format(genius_domain,artist_id)
+    albums = get_json(albums_link)
+    if albums == None:
+        return
+
+    for i in albums['response']['albums']:
+        get_genius_album(i['url'])
 
 def get_genius(artist,album,title):
-    genius_domain = 'https://genius.com'
-
     if artist == '':
         print("genius: artist not specified",file=sys.stderr)
         return
@@ -235,29 +267,12 @@ def get_genius(artist,album,title):
 
     if album != '':
         album = lyryx_field_dashed(album)
-        link = "{}/albums/{}/{}".format(genius_domain,artist,album)
-        get_genius_album(link)
+        get_genius_album("{}/albums/{}/{}".format(genius_domain,artist,album))
     elif title != '':
         title = lyryx_field_dashed(title)
-        link = "{}/{}-{}-lyrics".format(genius_domain,artist,title)
-        get_genius_lyrics(link)
+        get_genius_title("{}/{}-{}-lyrics".format(genius_domain,artist,title))
     else:
-        link = "{}/artists/{}".format(genius_domain,artist)
-        page = get_html(link,None)
-        if page == None:
-            return
-        artist_id = page.xpath('//a[contains(@href,"/albums?") and @class="full_width_button"]/@href')
-        if len(artist_id) == 0:
-            return
-        artist_id = genius_id_process(artist_id[0])
-        if len(artist_id) == 0:
-            return
-        albums_link = "{}/api/artists/{}/albums".format(genius_domain,artist_id)
-        albums = get_json(albums_link)
-        if albums == None:
-            return
-        for i in albums['response']['albums']:
-            get_genius_album(i['url'])
+        get_genius_artist("{}/artists/{}".format(genius_domain,artist))
 
 def mojim_artistid_process(artist):
     f = ord(artist[0])
@@ -275,7 +290,19 @@ def mojim_artistid_process(artist):
             o = 709
     return "%02d" % o
 
-def get_mojim_lyrics(url):
+def mojim_title_search(page,title):
+    title = lyryx_field_dashed(title)
+
+    for i in page.xpath('//dd[@class="hb2" or @class="hb3"]//span[@class="hc3" or @class="hc4"]//a[not(@target)]'):
+        name = i.xpath('./text()')
+        if len(name) == 0:
+            continue
+        name = lyryx_field_dashed(name[0])
+        if title == name:
+            return "{}{}".format(mojim_domain,i.xpath('./@href')[0])
+    return None
+
+def get_mojim_title(url):
     print(url)
     page = get_html(url,None)
     if page == None:
@@ -298,12 +325,10 @@ def get_mojim_lyrics(url):
     with open(name,"w") as file:
         file.write(out)
 
-def get_mojim(artist,album,title):
-    mojim_domain="https://mojim.com"
-
+def mojim_artist_search(artist):
     if artist == '':
-        print("genius: artist not specified",file=sys.stderr)
-        return
+        print("mojim: artist not specified",file=sys.stderr)
+        return None
 
     artist = lyryx_field_dashed(artist)
 
@@ -311,9 +336,8 @@ def get_mojim(artist,album,title):
     link = "{}/uszlhe1_{}.htm".format(mojim_domain,artistid)
     page = get_html(link,None)
     if page == None:
-        return
+        return None
 
-    s_artist = artist.translate(str.maketrans('-',' ')).title()
     artist_link = []
 
     for i in page.xpath('//ul[@class="s_listA"]//a'):
@@ -322,63 +346,76 @@ def get_mojim(artist,album,title):
             name = i.xpath('./strong/text()')
         if len(name) == 0:
             continue
-        name = name[0].strip().title()
-        if s_artist == name:
+        name = lyryx_field_dashed(name[0])
+        if artist == name:
             artist_link = i.xpath('./@href')
             break
 
     if len(artist_link) == 0:
+        return None
+
+    return "{}{}".format(mojim_domain,artist_link[0])
+
+def mojim_search_album(page,album):
+    album = lyryx_field_dashed(album)
+    album_link = []
+
+    for i in page.xpath('//dd[@class="hb2" or @class="hb3"]//span[@class="hc1"]//a'):
+        name = i.xpath('./text()')
+        if len(name) == 0:
+            continue
+        name = lyryx_field_dashed(name[0])
+        if album == name:
+            album_link = i.xpath('./@href')
+            break
+
+    if len(album_link) == 0:
+        return None
+
+    return "{}{}".format(mojim_domain,album_link[0])
+
+def get_mojim_album(url):
+    print(url)
+    page = get_html(url,None)
+    if page == None:
         return
 
-    artist_link = "{}{}".format(mojim_domain,artist_link[0])
+    for i in page.xpath('//table[@border and not(class)]//a[contains(@href,"/usy")]/@href'):
+        get_mojim_title("{}{}".format(mojim_domain,i))
+
+def get_mojim_artist(url,ishtml=False):
+    page = url
+    if ishtml is False:
+        print(url)
+        page = get_html(url,None)
+        if page == None:
+            return
+
+    for i in page.xpath('//dd[@class="hb2" or @class="hb3"]//span[@class="hc3" or @class="hc4"]//a[not(@target)]/@href'):
+        get_mojim_title(mojim_domain+i)
+
+def get_mojim(artist,album,title):
+    artist_link = mojim_artist_search(artist)
+    if artist_link == None:
+        return
+    print(artist_link)
     page = get_html(artist_link,None)
     if page == None:
         return
 
     if album != '':
-        album = lyryx_field_dashed(album)
-        s_album = album.translate(str.maketrans('-',' ')).title()
-        album_link = []
-
-        for i in page.xpath('//dd[@class="hb2" or @class="hb3"]//span[@class="hc1"]//a'):
-            name = i.xpath('./text()')
-            if len(name) == 0:
-                continue
-            name = name[0].strip().title()
-            if s_album == name:
-                album_link = i.xpath('./@href')
-                break
-
-        if len(album_link) == 0:
+        album_link = mojim_search_album(page,album)
+        if album_link == None:
             return
-
-        album_link = "{}{}".format(mojim_domain,album_link[0])
-        page = get_html(album_link,None)
-        if page == None:
-            return
-
-        for i in page.xpath('//table[@border and not(class)]//a[@class="t2"]/@href'):
-            get_mojim_lyrics("{}{}".format(mojim_domain,i))
-
+        get_mojim_album(album_link)
     else:
-        s_title = ''
         if title != '':
-            title = lyryx_field_dashed(title)
-            s_title = title.translate(str.maketrans('-',' ')).title()
-
-        for i in page.xpath('//dd[@class="hb2" or @class="hb3"]//span[@class="hc3" or @class="hc4"]//a[not(@target)]'):
-            title_link = "{}{}".format(mojim_domain,i.xpath('./@href')[0])
-            if title != '':
-                name = i.xpath('./text()')
-                if len(name) == 0:
-                    continue
-                name = name[0].strip().title()
-                if s_title == name:
-                    get_mojim_lyrics(title_link)
-                    break
-
-            else:
-                get_mojim_lyrics(title_link)
+            title_link = mojim_title_search(page,title)
+            if title_link == None:
+                return
+            get_mojim_title(title_link)
+        else:
+            get_mojim_artist(page,ishtml=True)
 
 lyrics_sources = {
     'azlyrics': get_azlyrics,
