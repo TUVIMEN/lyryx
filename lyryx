@@ -216,7 +216,7 @@ def get_genius_title(url):
         return
     print(name)
 
-    lyrics = page.xpath('//div[contains(@class,"Lyrics__Container-")]/text()')
+    lyrics = page.xpath('//div[contains(@class,"Lyrics__Container-")]//text()')
     out = ''
     for index, i in enumerate(lyrics):
         if index != 0 and i[0] == '[':
@@ -242,20 +242,26 @@ def get_genius_artist(url):
     if page == None:
         return
 
-    artist_id = page.xpath('//a[contains(@href,"/albums?") and @class="full_width_button"]/@href')
+    artist_id = page.xpath('//a[contains(@href,"/songs?") and @class="full_width_button"]/@href')
     if len(artist_id) == 0:
         return
     artist_id = genius_id_process(artist_id[0])
     if len(artist_id) == 0:
         return
 
-    albums_link = "{}/api/artists/{}/albums".format(genius_domain,artist_id)
-    albums = get_json(albums_link)
-    if albums == None:
-        return
+    songs_link = "{}/api/artists/{}/songs?page=".format(genius_domain,artist_id)
+    next_page = 1
 
-    for i in albums['response']['albums']:
-        get_genius_album(i['url'])
+    while next_page is not None:
+        songs_link_n = songs_link + str(next_page)
+        print(songs_link_n)
+        songs = get_json(songs_link_n)
+        if songs == None:
+            return
+        for i in songs['response']['songs']:
+            get_genius_title(i['url'])
+        next_page = songs['response']['next_page']
+
 
 def get_genius(artist,album,title):
     artist = lyryx_field_dashed(artist);
@@ -485,11 +491,11 @@ def get_url(url):
     formats = {
         (r'https?://www\.tekstowo\.pl/piosenki_artysty,[a-zA-Z0-9_]+\.html',get_tekstowo_artist),
         (r'https?://www\.tekstowo\.pl/piosenka,[a-zA-Z0-9_]+,[a-zA-Z0-9_]+\.html',get_tekstowo_title),
-        (r'https?://lyricsjonk\.com/artistdetail/[a-zA-Z0-9-._,]',get_lyricsjonk_artist),
-        (r'https?://lyricsjonk\.com/[a-zA-Z0-9-._,]\.html',get_lyricsjonk_artist),
-        (r'https?://genius\.com/[a-zA-Z0-9-,._]-lyrics',get_genius_title),
-        (r'https?://genius\.com/albums/[a-zA-Z0-9-,._]/[a-zA-Z0-9-,._]',get_genius_album),
-        (r'https?://genius\.com/artists/[a-zA-Z0-9-,._]',get_genius_artist),
+        (r'https?://lyricsjonk\.com/artistdetail/[a-zA-Z0-9-._,]+',get_lyricsjonk_artist),
+        (r'https?://lyricsjonk\.com/[a-zA-Z0-9-._,]+\.html',get_lyricsjonk_artist),
+        (r'https?://genius\.com/[a-zA-Z0-9-,._]+-lyrics',get_genius_title),
+        (r'https?://genius\.com/albums/[a-zA-Z0-9-,._]+/[a-zA-Z0-9-,._]+',get_genius_album),
+        (r'https?://genius\.com/artists/[a-zA-Z0-9-,._]+',get_genius_artist),
         (r'https?://mojim\.com/ush[0-9]+\.htm',get_mojim_artist),
         (r'https?://mojim\.com/us[0-9]+x[0-9]+\.htm',get_mojim_album),
         (r'https?://mojim\.com/usy[0-9]+x[0-9]+x[0-9]+\.htm',get_mojim_title)
