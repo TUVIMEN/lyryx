@@ -249,7 +249,7 @@ def get_genius_artist(url):
     if len(artist_id) == 0:
         return
 
-    songs_link = "{}/api/artists/{}/songs?page=".format(genius_domain,artist_id)
+    songs_link = "{}/api/artists/{}/songs?sort=popularity&page=".format(genius_domain,artist_id)
     next_page = 1
 
     while next_page is not None:
