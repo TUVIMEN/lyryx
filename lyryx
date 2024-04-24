@@ -21,6 +21,24 @@ lyricsjonk_domain = 'https://lyricsjonk.com'
 mojim_domain = 'https://mojim.com'
 genius_domain = 'https://genius.com'
 
+directory_artist = False
+
+def mkdir_and_chdir(name):
+    if os.path.exists(name):
+        print("{} directory already exists".format(name),file=sys.stderr)
+    else:
+        try:
+            os.mkdir(name)
+        except:
+            print('couldn\'t create {} directory'.format(name),file=sys.stderr)
+            return True
+    try:
+        os.chdir(name)
+    except:
+        print('couldn\'t change directory to "{}"'.format(name),file=sys.stderr)
+        return True
+    return False
+
 def get_req(url):
     resp = session.get(url)
 
@@ -61,7 +79,7 @@ def lyryx_name_from_url(url,delim):
     return url.translate(str.maketrans('_','-'))
 
 def lyryx_field_process(field):
-    return field.strip().lower().translate(str.maketrans('','',',.()[]{}"\'+/\\&@!?#%^*:'))
+    return field.strip().lower().translate(str.maketrans('','','`’”,.()[]{}"\'+/\\&@!?#%^*:'))
 
 def lyryx_field_floored(field):
     return re.sub(r'_+','_',lyryx_field_process(field).translate(str.maketrans(' -','__')))
@@ -100,6 +118,15 @@ def get_azlyrics_artist(url):
     page = get_html(url,azlyrics_robots)
     if page == None:
         return
+
+    if directory_artist:
+        name = page.xpath('//h1/strong/text()')
+        if len(name) == 0:
+            return
+        name = lyryx_field_dashed(re.sub(r' Lyrics$','',name[0]))
+        if (mkdir_and_chdir(name)):
+            return
+
     for i in page.xpath('//a[contains(@href,"/lyrics/")]/@href'):
         get_azlyrics_title('{}{}'.format(azlyrics_domain,i))
 
@@ -133,12 +160,22 @@ def get_tekstowo_title(url):
     with open(name,"w") as file:
         file.write(''.join(lyrics))
 
+def tekstowo_artist_name_from_url(url):
+    name = re.sub(r'^.*/piosenki_artysty,([^,]+),.*$',r'\1',url)
+    return lyryx_field_dashed(name)
+
 def get_tekstowo_artist(url):
     print(url)
+    name = None
     while True:
         page = get_html(url,None)
         if page == None:
             return
+
+        if directory_artist and name is None:
+            name = tekstowo_artist_name_from_url(url)
+            if len(name) == 0 or mkdir_and_chdir(name):
+                return
 
         for i in page.xpath('//div[@class="flex-group"]//a[@class="title"]/@href'):
             get_tekstowo_title("{}{}".format(tekstowo_domain,i))
@@ -186,9 +223,14 @@ def get_lyricsjonk_artist(url):
     page = get_html(url,None);
     if page == None:
         return
+
+    if directory_artist:
+        name = lyryx_name_from_url(url,'/');
+        if len(name) == 0 or mkdir_and_chdir(name):
+            return
+
     for i in page.xpath('//ul[@class="centerlist"]//a[@title]/@href'):
         get_lyricsjonk_title("{}{}".format(lyricsjonk_domain,i))
-
 
 def get_lyricsjonk(artist,album,title):
     if album != '':
@@ -237,6 +279,10 @@ def get_genius_album(url):
     for i in page.xpath('//div[@class="chart_row-content"]//a[@class="u-display_block"]/@href'):
         get_genius_title(i)
 
+def genius_artist_name_from_url(url):
+    name = re.sub(r'^.*/','',url);
+    return name.translate(str.maketrans(',_','--'))
+
 def get_genius_artist(url):
     page = get_html(url,None)
     if page == None:
@@ -245,12 +291,18 @@ def get_genius_artist(url):
     artist_id = page.xpath('//a[contains(@href,"/songs?") and @class="full_width_button"]/@href')
     if len(artist_id) == 0:
         return
+
     artist_id = genius_id_process(artist_id[0])
     if len(artist_id) == 0:
         return
 
     songs_link = "{}/api/artists/{}/songs?sort=popularity&page=".format(genius_domain,artist_id)
     next_page = 1
+
+    if directory_artist:
+        name = genius_artist_name_from_url(url)
+        if (mkdir_and_chdir(name)):
+            return
 
     while next_page is not None:
         songs_link_n = songs_link + str(next_page)
@@ -261,7 +313,6 @@ def get_genius_artist(url):
         for i in songs['response']['songs']:
             get_genius_title(i['url'])
         next_page = songs['response']['next_page']
-
 
 def get_genius(artist,album,title):
     artist = lyryx_field_dashed(artist);
@@ -387,6 +438,13 @@ def get_mojim_artist(url,ishtml=False):
         page = get_html(url,None)
         if page == None:
             return
+    if directory_artist:
+        name = page.xpath('//a[@class="X3"]/span[last()]/text()')
+        if len(name) == 0:
+            return
+        name = lyryx_field_dashed(re.sub(r'\(.*$','',name[-1]))
+        if (mkdir_and_chdir(name)):
+            return
 
     for i in page.xpath('//dd[@class="hb2" or @class="hb3"]//span[@class="hc3" or @class="hc4"]//a[not(@target)]/@href'):
         get_mojim_title(mojim_domain+i)
@@ -472,6 +530,11 @@ def get_argparser():
         type=valid_source,
         help='Specifies lyrics source'
     )
+    parser.add_argument(
+        '--directory-artist',
+        action='store_true',
+        help='Create directory for every artist'
+    )
 
     return parser
 
@@ -508,11 +571,18 @@ def get_url(url):
     print('{} - unknown format'.format(url),file=sys.stderr)
 
 def get_lyryx(source,lyrics):
+    pwd = os.getcwd()
     for i in lyrics:
         if re.match(r'^https?://([a-zA-Z0-9-]+\.)+[a-zA-Z]+/',i):
             get_url(i)
         else:
             get_lyrics(source,i)
+        if (pwd != os.getcwd()):
+            try:
+                os.chdir(pwd)
+            except:
+                print('couldn\'t change directory to "{}"'.format(name),file=sys.stderr)
+                return
 
 def main():
     args = get_argparser().parse_args(sys.argv[1:] if sys.argv[1:] else ['-h'])
@@ -536,6 +606,9 @@ lyricsjonk  artist                  artist||title""")
 
     global request_wait
     request_wait = args.wait if args.wait else None
+
+    global directory_artist
+    directory_artist = args.directory_artist
 
     get_lyryx(source,args.lyrics)
 
