@@ -244,6 +244,31 @@ def get_lyricsjonk(artist,album,title):
         title = lyryx_field_dashed(title);
         get_lyricsjonk_title("{}/{}-{}.html".format(lyricsjonk_domain,artist,title))
 
+def get_genius_lyrics_r(prevt, nodes, lyrics):
+    t = prevt
+    for i in nodes:
+        if isinstance(i,str):
+            t += i
+        elif isinstance(i,html.HtmlElement):
+            if i.tag == "br":
+                lyrics.append(t)
+                t = ""
+            else:
+                t = get_genius_lyrics_r(t,i.xpath('node()'),lyrics)
+    return t
+
+def get_genius_lyrics(page):
+    lyrics = []
+    last_line = get_genius_lyrics_r("",page.xpath('//div[contains(@class,"Lyrics__Container-")]/node()'),lyrics)
+    lyrics.append(last_line)
+
+    out = ""
+    for index, i in enumerate(lyrics):
+        if index != 0 and len(i) and i[0] == '[' and out[-2:] != "\n\n":
+            out += '\n'
+        out += i + '\n'
+    return out
+
 def get_genius_title(url):
     print(url)
     page = get_html(url,None)
@@ -258,12 +283,7 @@ def get_genius_title(url):
         return
     print(name)
 
-    lyrics = page.xpath('//div[contains(@class,"Lyrics__Container-")]//text()')
-    out = ''
-    for index, i in enumerate(lyrics):
-        if index != 0 and i[0] == '[':
-            out += '\n'
-        out += i + '\n'
+    out = get_genius_lyrics(page)
 
     with open(name,"w") as file:
         file.write(out)
