@@ -170,6 +170,7 @@ class azlyrics(Site):
 
         self.domain = "https://www.azlyrics.com"
 
+    @staticmethod
     def robots(resp):
         if len(
             resp.xpath(
@@ -383,7 +384,7 @@ class genius(Site):
         with open(name, "w") as file:
             file.write(out)
 
-    def process_id(p_id):
+    def process_id(self, p_id):
         p_id = re.sub(r"&.*", "", p_id)
         return re.sub(r".*=", "", p_id)
 
@@ -394,7 +395,7 @@ class genius(Site):
         ):
             self.title(i)
 
-    def genius_artist_name_from_url(url):
+    def artist_name_from_url(self, url):
         name = re.sub(r"^.*/", "", url)
         return name.translate(str.maketrans(",_", "--"))
 
