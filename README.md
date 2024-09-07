@@ -13,17 +13,17 @@ A python script for downloading lyrics.
 
 ## Supported sources
 
- - [azlyrics](https://www.azlyrics.com) artist                  artist||title
- - [genius](https://genius.com)         artist  artist|album    artist||title
- - [mojim](https://mojim.com)           artist  artist|album    artist||title
- - [tekstowo](https://www.tekstowo.pl)  artist                  artist||title
- - [lyricsjonk](https://lyricsjonk.com) artist                  artist||title
+| | | | |
+| - | - | - | - |
+| [azlyrics](https://www.azlyrics.com) | `artist` |                 | `artist\|\|title` |
+| [genius](https://genius.com)         | `artist` | `artist\|album` | `artist\|\|title` |
+| [mojim](https://mojim.com)           | `artist` | `artist\|album` | `artist\|\|title` |
+| [tekstowo](https://www.tekstowo.pl)  | `artist` |                 | `artist\|\|title` |
+| [lyricsjonk](https://lyricsjonk.com) | `artist` |                 | `artist\|\|title` |
 
 ## Usage
 
-Script download lyrics to a song based on arguments provided. Arguments have to be in `artist`, `artist|album` or `artist||title` format. Fields in the arguments are case insensitive and special characters are deleted from them, words can be separated by ' ', '-' or '_'.
-
-Arguments can also be links to lyrics.
+Script downloads lyrics based on  `artist`, `artist|album`, `artist||title` formats or url. Fields in the arguments are case insensitive and special characters are deleted from them, words can be separated by ` `, `-` or `_`.
 
 Currently no source supports `artist|album|title`.
 
@@ -35,23 +35,23 @@ Download lyrics by artist to current directory, by default from `genius`
 
     lyryx burzum
 
-Download lyrics by artist from `azlyrics` setting request speed to 2.5 seconds
+Download lyrics by `artist` from `azlyrics` waiting 2.5 seconds between each request
 
     lyryx -s azlyrics -w 2.5 burzum
 
-Download lyrics by artist|album to directory DIR
+Download lyrics by `artist|album` to directory DIR
 
     lyryx -s genius -d DIR 'At the gates|terminal spirit disease'
 
-Download lyrics by artist||title
+Download lyrics by `artist||title`
 
-    lyryx -s tekstowo 'cirith-ungol||Fallen IDOLS' 'death||suicide-machine'
+    lyryx -s tekstowo 'cirith-ungol || Fallen IDOLS' 'death||suicide-machine'
 
 Download lyrics by url
 
     lyryx 'https://mojim.com/ush163952.htm'
 
-Print sources table
+Print the table of sources
 
     lyryx -S
 
