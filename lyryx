@@ -113,7 +113,10 @@ class Site:
     def name_from_url(self, url, delim):
         url = re.sub(r".*" + delim, "", url)
         url = re.sub(r"\.html$", "", url)
-        return url.translate(str.maketrans("_", "-"))
+        url = url.translate(str.maketrans("_", "-"))
+        url = re.sub(r"-+", "-", url)
+        url = re.sub(r"^-", "", url)
+        return re.sub(r"-$", "", url)
 
     def field_process(self, field):
         return (
@@ -247,13 +250,13 @@ class tekstowo(Site):
 
         lyrics = page.xpath('//div[@id="songText"]//div[@class="inner-text"]/text()')
         for i, line in enumerate(lyrics):
-            lyrics[i] = lyrics[i].strip() + "\n"
+            lyrics[i] = line.strip() + "\n"
 
         with open(name, "w") as file:
             file.write("".join(lyrics))
 
     def artist_name_from_url(self, url):
-        name = re.sub(r"^.*/piosenki_artysty,([^,]+),.*$", r"\1", url)
+        name = re.sub(r"^.*/piosenki_artysty,([^,]+)(,.*|\.html)$", r"\1", url).lower()
         return self.field_dashed(name)
 
     def get_artist(self, url):
@@ -408,7 +411,7 @@ class genius(Site):
 
     def artist_name_from_url(self, url):
         name = re.sub(r"^.*/", "", url)
-        return name.translate(str.maketrans(",_", "--"))
+        return name.lower().translate(str.maketrans(",_", "--"))
 
     def get_artist(self, url):
         page = self.get_html(url)
