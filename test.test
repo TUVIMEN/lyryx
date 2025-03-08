@@ -1,0 +1,25 @@
+#genius
+452de4ab59d1e0bb0cb7bd1ac1319d6f,'https://genius.com/Juice-wrld-10-feet-lyrics'
+452de4ab59d1e0bb0cb7bd1ac1319d6f,-s genius 'juice-wrld||  10-FeeT'
+cc39e4ea22af4ffce1820d5e15861d63,'https://genius.com/albums/Juice-wrld/The-party-never-ends-deluxe'
+cc39e4ea22af4ffce1820d5e15861d63,-s genius 'juice-wrld|the PARty   never ends   deluxe'
+f9b5ab6d54311f5158e66f5b6fb3efce,--directory-artist 'https://genius.com/artists/Mistur'
+f9b5ab6d54311f5158e66f5b6fb3efce,--directory-artist -s genius mistur
+
+#tekstowo
+96b6c707a39cf5b1380c06ba6b6d25af,'https://www.tekstowo.pl/piosenka,summoning,flammifer.html'
+96b6c707a39cf5b1380c06ba6b6d25af,-s tekstowo 'summoning||flammifer'
+38606504afd8309e12fcf8ea7b47f458,--directory-artist 'https://www.tekstowo.pl/piosenki_artysty,thy_serpent.html'
+38606504afd8309e12fcf8ea7b47f458,--directory-artist -s tekstowo 'thy serpent'
+
+#azlyrics
+e2d82fd9df910dc038000f814bb4519d,-w 2 'https://www.azlyrics.com/lyrics/leony/nomoresecondchances.html'
+e2d82fd9df910dc038000f814bb4519d,-w 2 -s azlyrics 'leony||no more second chances'
+dd784c6327151795b57314086feae2de,--directory-artist -w 2 'https://www.azlyrics.com/m/memorist.html'
+dd784c6327151795b57314086feae2de,--directory-artist -s azlyrics -w 2 'memorist'
+
+#mojim
+doesn't exist anymore
+
+#lyricsjonk
+doesn't exist anymore
