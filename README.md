@@ -8,6 +8,7 @@ A python script for downloading lyrics.
     lxml
 
 ## Installation
+
     pip install -r requirements.txt
     install -m 755 lyryx /usr/bin
 

@@ -240,7 +240,8 @@ class tekstowo(Site):
         page = self.get_html(url)
 
         lyrics = page.xpath('//div[@id="songText"]//div[@class="inner-text"]/text()')
-        lyrics.append("\n")
+        for i, line in enumerate(lyrics):
+            lyrics[i] = lyrics[i].strip() + "\n"
 
         with open(name, "w") as file:
             file.write("".join(lyrics))
