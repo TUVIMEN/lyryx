@@ -6,6 +6,7 @@ import sys
 import os
 import re
 import time
+import random
 import argparse
 
 import requests
@@ -20,6 +21,7 @@ session.headers.update(
 )
 
 request_wait = None
+request_wait_random = None
 directory_artist = False
 pedantic = False
 logger = True
@@ -72,6 +74,8 @@ def get_req(url):
 
     if request_wait:
         time.sleep(request_wait)
+    if request_wait_random:
+        time.sleep(random.randint(0, request_wait_random + 1) / 1000)
 
     if resp.status_code == 404:
         raise PageNotFound(url, "page not found")
@@ -647,6 +651,13 @@ def get_argparser():
         help="Sets waiting time for each request to SECONDS",
     )
     parser.add_argument(
+        "-W",
+        "--wait-random",
+        metavar="MILISECONDS",
+        type=int,
+        help="Sets random waiting time for each request to be at max MILISECONDS",
+    )
+    parser.add_argument(
         "-S",
         "--sources-list",
         action="store_true",
@@ -766,6 +777,8 @@ lyricsjonk  artist                  artist||title"""
 
     global request_wait
     request_wait = args.wait if args.wait else None
+    global request_wait_random
+    request_wait_random = args.wait_random if args.wait_random else None
 
     global directory_artist
     directory_artist = args.directory_artist
