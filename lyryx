@@ -181,7 +181,7 @@ class azlyrics(Site):
         return False
 
     def get_title(self, url):
-        page = self.get_html(url, self.robots)
+        page = self.get_html(url)
         name = page.xpath('//div[contains(@class,"text-center")]/b/text()')
         if len(name) == 0:
             return
@@ -192,13 +192,15 @@ class azlyrics(Site):
         print(name)
 
         lyrics = page.xpath('//div[contains(@class,"text-center")]/div[5]/text()')[1:]
+        for i, line in enumerate(lyrics):
+            lyrics[i] = line.strip() + "\n"
 
         with open(name, "w") as file:
             file.write("".join(lyrics))
 
     def get_artist(self, url):
         print(url)
-        page = self.get_html(url, self.robots)
+        page = self.get_html(url)
 
         if directory_artist:
             name = page.xpath("//h1/strong/text()")
@@ -691,6 +693,14 @@ def get_url(url):
         (
             r"https?://www\.tekstowo\.pl/piosenka,[a-zA-Z0-9_]+,[a-zA-Z0-9_]+\.html",
             tekstowo().title,
+        ),
+        (
+            r"https?://www\.azlyrics\.com/([a-zA-Z0-9_+-])/\1[a-zA-Z0-9_+-]+.html(#.*)?",
+            azlyrics().artist,
+        ),
+        (
+            r"https?://www\.azlyrics\.com/lyrics/[a-zA-Z0-9_+-]+/[a-zA-Z0-9_+-]+.html",
+            azlyrics().title,
         ),
         (
             r"https?://lyricsjonk\.com/artistdetail/[a-zA-Z0-9-._,]+",
