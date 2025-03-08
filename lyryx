@@ -355,7 +355,9 @@ class genius(Site):
         lyrics = []
         last_line = self.lyrics_r(
             "",
-            page.xpath('//div[contains(@class,"Lyrics__Container-")]/node()'),
+            page.xpath(
+                '//div[starts-with(@class,"Lyrics-sc-") and contains(@class,"-1 ") and contains(@data-lyrics-container,"true")]/node()'
+            ),
             lyrics,
         )
         lyrics.append(last_line)
@@ -370,7 +372,9 @@ class genius(Site):
     def get_title(self, url):
         print(url)
         page = self.get_html(url)
-        name = page.xpath('//span[contains(@class,"SongHeaderdesktop__")]/text()')
+        name = page.xpath(
+            '//span[starts-with(@class,"SongHeader-desktop-sc-") and contains(@class,"-11 ")]/text()'
+        )
         if len(name) == 0:
             return
         name = self.field_dashed(name[0])
