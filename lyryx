@@ -15,7 +15,7 @@ from lxml import html
 session = requests.Session()
 session.headers.update(
     {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:101.0) Gecko/20100101 Firefox/101.0",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0",
         "Accept-Encoding": "gzip, deflate",
     }
 )
@@ -357,6 +357,8 @@ class genius(Site):
                 if i.tag == "br":
                     lyrics.append(t)
                     t = ""
+                elif i.xpath('div[not(contains(@data-exclude-from-selection,"true"))]'):
+                    continue
                 else:
                     t = self.lyrics_r(t, i.xpath("node()"), lyrics)
         return t
@@ -382,9 +384,11 @@ class genius(Site):
     def get_title(self, url):
         print(url)
         page = self.get_html(url)
+
         name = page.xpath(
-            '//span[starts-with(@class,"SongHeader-desktop__HiddenMask-sc-") and contains(@class,"-11 ")]/text()'
+            '//span[(starts-with(@class,"SongHeader-desktop__HiddenMask-sc-") and contains(@class,"-11 ")) or (starts-with(@class,"SongHeaderV3-desktop__HiddenMask-sc-") and contains(@class,"-13 "))]/text()'
         )
+
         if len(name) == 0:
             return
         name = self.field_dashed(name[0])
