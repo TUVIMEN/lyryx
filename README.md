@@ -46,7 +46,7 @@ Download lyrics by `artist|album` to directory DIR
 
 Download lyrics by `artist||title`
 
-    lyryx -s tekstowo 'cirith-ungol || Fallen IDOLS' 'death||suicide-machine'
+    lyryx -s tekstowo 'cirith-ungoL || Fallen IDOLS' 'death||suicide-machine'
 
 Download lyrics by url
 
