@@ -385,9 +385,7 @@ class genius(Site):
         print(url)
         page = self.get_html(url)
 
-        name = page.xpath(
-            '//span[(starts-with(@class,"SongHeader-desktop__HiddenMask-sc-") and contains(@class,"-11 ")) or (starts-with(@class,"SongHeaderV3-desktop__HiddenMask-sc-") and contains(@class,"-13 "))]/text()'
-        )
+        name = page.xpath("//h1//span/text()")
 
         if len(name) == 0:
             return
